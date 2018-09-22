@@ -29,10 +29,10 @@ def getParticipantIDJobShift(main_data_directory):
     return participant_id_job_shift_df
 
 
-def getParticipantInfo(main_data_directory, index=1):
+def read_participant_info(main_data_directory, index=1):
     
-    IDs = pd.read_csv(os.path.join(main_data_directory, 'keck_wave2/id-mapping', 'mitreids.csv'))
-    participant_info = pd.read_csv(os.path.join(main_data_directory, 'keck_wave2/participant_info', 'participant_info.csv'))
+    IDs = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/id-mapping', 'mitreids.csv'))
+    participant_info = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/participant_info', 'participant_info.csv'))
     participant_info = participant_info.fillna("")
     
     for index, row in participant_info.iterrows():
@@ -100,7 +100,7 @@ def read_IGTB_Raw(main_data_directory):
 def read_user_information(main_data_directory):
     
     # Read participant information
-    participant_info = getParticipantInfo(main_data_directory)
+    participant_info = read_participant_info(main_data_directory)
     
     # Read Pre-Study info
     PreStudyInfo = read_pre_study_info(main_data_directory)
