@@ -23,10 +23,9 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
 
-def parseArgs():
-    DEBUG = 1
+def parseArgs(READ_ARGS=0):
     
-    if DEBUG == 0:
+    if READ_ARGS == 1:
         """
             Parse the args:
             1. main_data_directory: directory to store keck data
@@ -70,7 +69,7 @@ def parseArgs():
     return main_data_directory, window, step, n_cluster, hour_window
 
 # Compute statistical feature for one physiological response
-def compute_stat(session_name, data, output_data_df, feat, stats_col, threshold=20):
+def compute_stat(session_name, data, output_data_df, feat, stats_col, threshold=15):
     if len(data) > threshold:
         for col in stats_col:
             if col == 'mean':
@@ -107,8 +106,35 @@ def compute_stat(session_name, data, output_data_df, feat, stats_col, threshold=
     return output_data_df
 
 
-def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
-                          mgt_df, participant_id, shift, survey_date):
+def extract_feat_and_return(frame_om_df, frame_om_preprocess_df,
+                            mgt_df, participant_id, shift):
+    """
+    Extract statistical feature over a hour_window prior to a survey response
+
+    Parameters
+    ----------
+    frame_om_df: DataFrame
+        om signal raw data
+
+    frame_om_preprocess_df: DataFrame
+        om signal preprocessed data, aggregate step, and heart rate
+
+    mgt_df: DataFrame
+        MGT input.
+
+    participant_id: str
+        Participant id
+
+    shift: str
+        Shift type
+    
+    Returns
+    -------
+    
+    return_df: DataFrame
+        Survey responses, statistical feature of OMSignal data
+    
+    """
     
     # Read basic
     survey_time = pd.to_datetime(mgt_df.index.values[0]).strftime(date_time_format)[:-3]
@@ -122,13 +148,13 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
     return_df['shift'] = shift
     return_df['survey_time'] = survey_time
     
-    # Copy some mgt data
+    # Copy mgt data of interest
     copy_col = ['cluster', 'stress_mgt', 'anxiety_mgt', 'pos_af_mgt', 'neg_af_mgt']
 
     for col in copy_col:
         return_df[col] = mgt_df[col].values[0]
 
-    print('Participant: %s, date: %s' % (participant_id, survey_date))
+    print('Participant: %s, date: %s' % (participant_id, survey_time))
     
     # 1. Compute stats on ready-to-use feature
     physio_col = ['AvgBreathingRate', 'StdDevBreathingRate',
@@ -139,7 +165,7 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
         data_array = frame_om_df[col].dropna()
         data_array = data_array[data_array != 0]
         return_df = compute_stat(prefix_name, np.array(data_array),
-                                 return_df, col, stats_col, threshold=20)
+                                 return_df, col, stats_col)
     
     # 2. Steps
     return_df = compute_stat(prefix_name, np.array(frame_om_preprocess_df['Steps'].dropna()),
@@ -147,6 +173,7 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
     
     # 3. Heart Rate
     array_heart_rate = frame_om_preprocess_df['HeartRate_mean'].dropna()
+    # Select valid heart rate
     cond1 = array_heart_rate > 40
     cond2 = array_heart_rate < 150
     return_df = compute_stat(prefix_name, np.array(array_heart_rate[cond1 & cond2].dropna()),
@@ -154,8 +181,8 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
     
     # 4. HRV feature, choose rr peak coverage region above 0.8
     om_hrv_df = frame_om_df[frame_om_df['RRPeakCoverage'] > 0.8]
-    om_hrv_rmsdd = np.sort(om_hrv_df['RMSStdDev_ms'].dropna())
-    om_hrv_rrstd = np.sort(om_hrv_df['SDNN_ms'].dropna())
+    om_hrv_rmsdd = om_hrv_df['RMSStdDev_ms'].dropna()
+    om_hrv_rrstd = om_hrv_df['SDNN_ms'].dropna()
     
     return_df = compute_stat(prefix_name, om_hrv_rmsdd, return_df, 'RMSStdDev_ms', stats_col)
     return_df = compute_stat(prefix_name, om_hrv_rrstd, return_df, 'SDNN_ms', stats_col)
@@ -164,13 +191,39 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
 
 
 def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30):
+    """
+    Extract statistical feature over a hour_window prior to all valid survey response
+
+    Parameters
+    ----------
+    UserInfo: DataFrame
+        basic information per user, like shift type
+
+    MGT_df: DataFrame
+        MGT_df data
+
+    hour_window: int
+        number of hours prior to a survey response.
+    
+    window: int
+        DO NOT CHANGE,
+        
+    step: int
+        DO NOT CHANGE
+
+    Returns
+    -------
+    
+    NA, But data got saved to a csv at each time a survey is iterated
+    
+    """
     
     output_path = '../output/ml_feat'
     
     user_index = 0
     final_df = pd.DataFrame()
 
-    # Preprocessed feature path for participant
+    # Read preprocessed feature path for participant
     window_path = os.path.join('../output/preprocessed_data', 'window_' + str(window) + '_step_' + str(step))
     if os.path.exists(window_path) is False:
         os.mkdir(window_path)
@@ -190,7 +243,7 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
         participantMGT = MGT_df.loc[cond1]
         
         # Read the OM signal data
-        om_file_path = os.path.join(main_data_directory, 'keck_wave2/3_preprocessed_data', 'omsignal',
+        om_file_path = os.path.join(main_data_directory, 'keck_wave3/3_preprocessed_data', 'omsignal',
                                     participant_id + '_omsignal.csv')
         om_preprocess_file_path = os.path.join(window_path, participant_id + '.csv')
         
@@ -208,9 +261,8 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
             if len(participantMGT) > 0:
                 for timestamp, dailyMGT in participantMGT.iterrows():
                 
-                    # Define parameters
-                    survey_date = pd.to_datetime(timestamp).strftime(date_only_date_time_format)
-                    threshold = int(hour_window / 2) * 3600
+                    # Define threshold
+                    threshold = 3600 * int(hour_window / 2)
                 
                     # Get daily MGT
                     frame_MGT = dailyMGT.to_frame().transpose()
@@ -226,14 +278,14 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
                 
                     # At least 50 % of data, then process
                     if len(frame_om_raw_data_df) > threshold:
-                        feature_and_survey = extract_feat_and_save(frame_om_raw_data_df, frame_om_preprocess_df,
-                                                                   dailyMGT.to_frame().transpose(),
-                                                                   participant_id, shift_type, survey_date)
+                        feature_and_survey = extract_feat_and_return(frame_om_raw_data_df, frame_om_preprocess_df,
+                                                                    dailyMGT.to_frame().transpose(),
+                                                                    participant_id, shift_type)
                         
                         # ADD YOUR CODE HERE IF YOU WANT TO EXTRACT MORE FEATURES
                         # JUST APPEND TO feature_and_survey, BEFORE feature_and_survey HAS BEEN APPEND TO final_df
                         # ------------------------------------------
-
+                        # example: feature_and_survey['feature'] = np.nan
                         # ------------------------------------------
     
                         final_df = final_df.append(feature_and_survey)
@@ -244,7 +296,7 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
 
 
 def select_scaler(scaler_name):
-    # Transformation
+    # select scaler
     if scaler_name == 'z_norm':
         scaler = preprocessing.StandardScaler()
     elif scaler_name == 'min_max':
@@ -256,6 +308,25 @@ def select_scaler(scaler_name):
 
 
 def append_cluster_MGT(UserInfo, MGT_df, n_cluster=2):
+    """
+    Cluster affect lables
+
+    Parameters
+    ----------
+    UserInfo: DataFrame
+        basic information per user, like shift type
+
+    MGT_df: DataFrame
+        MGT_df data
+
+    n_cluster: int
+        number of clusters want.
+
+    Returns
+    -------
+    final_MGT_df : DataFrame
+        The MGT at work + emotion cluster label.
+    """
     
     # First append MGT
     final_MGT_df = pd.DataFrame()
@@ -300,7 +371,12 @@ if __name__ == "__main__":
         os.mkdir(os.path.join('../output/ml_feat'))
 
     # Read args
-    main_data_directory, window, step, n_cluster, hour_window = parseArgs()
+    # 1: '-i', '--main_data_directory';
+    # 2: '-w', '--window'; JUST USE 60
+    # 3: '-s', '--step'; JUST USE 30
+    # 4: -c', '--cluster;
+    # 5: '-h', '--hour_window'
+    main_data_directory, window, step, n_cluster, hour_window = parseArgs(READ_ARGS=0)
     
     # Read MGT and user level information
     UserInfo = read_user_information(main_data_directory)
@@ -314,7 +390,7 @@ if __name__ == "__main__":
     UserInfo = UserInfo[:]
     
     # Append clustering
-    final_MGT_df = append_cluster_MGT(UserInfo, MGT_df, n_cluster=2)
+    final_MGT_df = append_cluster_MGT(UserInfo, MGT_df, n_cluster=n_cluster)
 
     # Extract Feature
     extract_feat_with_survey(UserInfo, final_MGT_df)
