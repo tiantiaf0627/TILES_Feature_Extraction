@@ -33,10 +33,8 @@ def parseArgs():
                             help='Directory for data.')
         parser.add_argument('-o', '--output_directory', type=str, required=True,
                             help='Directory for output.')
-
         parser.add_argument('-w', '--window', type=str, required=True,
                             help='moving window')
-
         parser.add_argument('-s', '--step', type=str, required=True,
                             help='moving step')
         
@@ -177,7 +175,7 @@ if __name__ == "__main__":
     
     # Only nurses are selected here
     # Please modify read_AllBasic on your own flavor to get different type of jobs
-    UserInfo = read_AllBasic(main_data_directory)
+    UserInfo = read_user_information(main_data_directory)
     MGT_df = read_MGT(main_data_directory)
     
     print('----------------------------------------------------------------')
@@ -185,6 +183,6 @@ if __name__ == "__main__":
     print('----------------------------------------------------------------')
     
     participant_timeline = pd.DataFrame()
-    UserInfo = UserInfo[120:]
+    UserInfo = UserInfo[:50]
     
     preprocess_om(UserInfo)

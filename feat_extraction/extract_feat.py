@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 import sys
-import matplotlib.pyplot as plt
 
 # date_time format
 date_time_format = '%Y-%m-%dT%H:%M:%S.%f'
@@ -51,12 +50,12 @@ def parseArgs():
         args = parser.parse_args()
         
         """
-            main_data_directory = '../../data/keck_wave1/2_preprocessed_data'
+            main_data_directory = '../../data/keck_wave3/2_preprocessed_data'
             window, step = 60, 30
         """
         
         main_data_directory = os.path.join(os.path.expanduser(os.path.normpath(args.main_data_directory)),
-                                           'keck_wave2/2_preprocessed_data')
+                                           'keck_wave3/2_preprocessed_data')
         
         window, step, n_cluster, hour_window = int(args.window), int(args.step), int(args.cluster), int(args.hour_window)
     
@@ -70,8 +69,8 @@ def parseArgs():
     
     return main_data_directory, window, step, n_cluster, hour_window
 
-
-def compute_stat(session_name, data, output_data_df, feat, stats_col, threshold=12):
+# Compute statistical feature for one physiological response
+def compute_stat(session_name, data, output_data_df, feat, stats_col, threshold=20):
     if len(data) > threshold:
         for col in stats_col:
             if col == 'mean':
@@ -140,7 +139,7 @@ def extract_feat_and_save(frame_om_df, frame_om_preprocess_df,
         data_array = frame_om_df[col].dropna()
         data_array = data_array[data_array != 0]
         return_df = compute_stat(prefix_name, np.array(data_array),
-                                 return_df, col, stats_col, threshold=12)
+                                 return_df, col, stats_col, threshold=20)
     
     # 2. Steps
     return_df = compute_stat(prefix_name, np.array(frame_om_preprocess_df['Steps'].dropna()),
@@ -304,7 +303,7 @@ if __name__ == "__main__":
     main_data_directory, window, step, n_cluster, hour_window = parseArgs()
     
     # Read MGT and user level information
-    UserInfo = read_AllBasic(main_data_directory)
+    UserInfo = read_user_information(main_data_directory)
     MGT_df = read_MGT(main_data_directory)
     
     print('----------------------------------------------------------------')
