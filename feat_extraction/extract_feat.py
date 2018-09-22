@@ -300,8 +300,10 @@ if __name__ == "__main__":
     if os.path.exists(os.path.join('../output/ml_feat')) is False:
         os.mkdir(os.path.join('../output/ml_feat'))
 
+    # Read args
     main_data_directory, window, step, n_cluster, hour_window = parseArgs()
     
+    # Read MGT and user level information
     UserInfo = read_AllBasic(main_data_directory)
     MGT_df = read_MGT(main_data_directory)
     
@@ -312,5 +314,8 @@ if __name__ == "__main__":
     participant_timeline = pd.DataFrame()
     UserInfo = UserInfo[:]
     
+    # Append clustering
     final_MGT_df = append_cluster_MGT(UserInfo, MGT_df, n_cluster=2)
+
+    # Extract Feature
     extract_feat_with_survey(UserInfo, final_MGT_df)
