@@ -196,13 +196,14 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
         om_preprocess_file_path = os.path.join(window_path, participant_id + '.csv')
         
         # If om file exist
-        if os.path.exists(om_file_path):
+        if os.path.exists(om_file_path) is True and os.path.exists(om_preprocess_file_path) is True:
             
             # Read om data and om preprocessed data
             om_df = pd.read_csv(om_file_path, index_col=0)
             om_df = om_df.sort_index()
             
             om_preprocess_df = pd.read_csv(om_preprocess_file_path, index_col=0)
+            om_preprocess_df = om_preprocess_df.sort_index()
             
             # Iterate MGT per participant
             if len(participantMGT) > 0:

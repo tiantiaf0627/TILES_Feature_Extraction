@@ -43,12 +43,12 @@ def parseArgs():
         args = parser.parse_args()
         
         """
-            main_data_directory = '../../data/keck_wave1/2_preprocessed_data'
+            main_data_directory = '../../data/keck_wave3/3_preprocessed_data'
             window, step = 60, 30
         """
         
         main_data_directory = os.path.join(os.path.expanduser(os.path.normpath(args.main_data_directory)),
-                                           'keck_wave2/2_preprocessed_data')
+                                           'keck_wave3/3_preprocessed_data')
 
         window, step = int(args.window), int(args.step)
         
@@ -92,26 +92,28 @@ def process_and_save_data(data_df, window_output_path, participant_id, window=30
 
         print('Participant: %s, time: %s, complete rate: %.2f' % (window_output_path,
                                                                   frame_current, float(i / delta) * 100))
-        # Moving averaging
-        frame_data_preprocess_df = pd.DataFrame(index=[frame_current])
-        
+                
         # if we have at least 50% of data in the frame
         if len(frame_data_df) > window / 2:
-            # 1. Breathing
-            array_breathing_rate = frame_data_df['BreathingRate'].dropna()
-            array_breathing_rate = array_breathing_rate[array_breathing_rate != 0]
             
-            array_breathing_depth = frame_data_df['BreathingDepth'].dropna()
-            array_breathing_depth = array_breathing_depth[array_breathing_depth != 0]
+            # Preprocess frame
+            frame_data_preprocess_df = pd.DataFrame(index=[frame_current])
+    
+            # 1. Breathing
+            # array_breathing_rate = frame_data_df['BreathingRate'].dropna()
+            # array_breathing_rate = array_breathing_rate[array_breathing_rate != 0]
+            
+            # array_breathing_depth = frame_data_df['BreathingDepth'].dropna()
+            # array_breathing_depth = array_breathing_depth[array_breathing_depth != 0]
 
-            frame_data_preprocess_df['BreathingRate_mean'] = np.mean(array_breathing_rate)
-            frame_data_preprocess_df['BreathingDepth_mean'] = np.mean(array_breathing_depth)
+            # frame_data_preprocess_df['BreathingRate_mean'] = np.mean(array_breathing_rate)
+            # frame_data_preprocess_df['BreathingDepth_mean'] = np.mean(array_breathing_depth)
             
             # 2. Cadence
-            frame_data_preprocess_df['Cadence_mean'] = np.mean(frame_data_df['Cadence'].dropna())
+            # frame_data_preprocess_df['Cadence_mean'] = np.mean(frame_data_df['Cadence'].dropna())
             
             # 3. Intensity
-            frame_data_preprocess_df['Intensity_mean'] = np.mean(frame_data_df['Intensity'].dropna())
+            # frame_data_preprocess_df['Intensity_mean'] = np.mean(frame_data_df['Intensity'].dropna())
             
             # 4. Steps: aggregate
             frame_data_preprocess_df['Steps'] = np.sum(np.array(frame_data_df['Steps'].dropna()))
@@ -150,7 +152,7 @@ def preprocess_om(UserInfo, window=60, step=30):
         participant_id, shift_type = data['ParticipantID'], data['Shift']
         
         # Read the OM signal data
-        om_file_path = os.path.join(main_data_directory, 'keck_wave2/3_preprocessed_data', 'omsignal',
+        om_file_path = os.path.join(main_data_directory, 'keck_wave3/3_preprocessed_data', 'omsignal',
                                     participant_id + '_omsignal.csv')
         
         # If om csv exist, pre_process the data
@@ -182,9 +184,7 @@ if __name__ == "__main__":
     print('Number of user in total: %d' % (len(UserInfo)))
     print('----------------------------------------------------------------')
     
-    stream_types = ['omsignal_before_work']
-    
     participant_timeline = pd.DataFrame()
-    UserInfo = UserInfo[39:60]
+    UserInfo = UserInfo[120:]
     
     preprocess_om(UserInfo)
