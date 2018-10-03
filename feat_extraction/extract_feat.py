@@ -33,18 +33,12 @@ def parseArgs(READ_ARGS=0):
 
         """
         parser = argparse.ArgumentParser(description='Create a dataframe of worked days.')
-        parser.add_argument('-i', '--main_data_directory', type=str, required=True,
-                            help='Directory for data.')
-        parser.add_argument('-o', '--output_directory', type=str, required=True,
-                            help='Directory for output.')
-        parser.add_argument('-w', '--window', type=str, required=True,
-                            help='moving window')
-        parser.add_argument('-s', '--step', type=str, required=True,
-                            help='moving step')
-        parser.add_argument('-c', '--cluster', type=str, required=True,
-                            help='number of cluster')
-        parser.add_argument('-h', '--hour_window', type=str, required=True,
-                            help='number of cluster')
+        parser.add_argument('-i', '--main_data_directory', type=str, required=True, help='Directory for data.')
+        parser.add_argument('-o', '--output_directory', type=str, required=True, help='Directory for output.')
+        parser.add_argument('-w', '--window', type=str, required=True, help='moving window')
+        parser.add_argument('-s', '--step', type=str, required=True, help='moving step')
+        parser.add_argument('-c', '--cluster', type=str, required=True, help='number of cluster')
+        parser.add_argument('-h', '--hour_window', type=str, required=True, help='number of cluster')
         
         args = parser.parse_args()
         
@@ -53,8 +47,7 @@ def parseArgs(READ_ARGS=0):
             window, step = 60, 30
         """
         
-        main_data_directory = os.path.join(os.path.expanduser(os.path.normpath(args.main_data_directory)),
-                                           'keck_wave3/2_preprocessed_data')
+        main_data_directory = os.path.join(os.path.expanduser(os.path.normpath(args.main_data_directory)), 'keck_wave3/2_preprocessed_data')
         
         window, step, n_cluster, hour_window = int(args.window), int(args.step), int(args.cluster), int(args.hour_window)
     
@@ -168,16 +161,14 @@ def extract_feat_and_return(frame_om_df, frame_om_preprocess_df,
                                  return_df, col, stats_col)
     
     # 2. Steps
-    return_df = compute_stat(prefix_name, np.array(frame_om_preprocess_df['Steps'].dropna()),
-                             return_df, 'Steps', stats_col)
+    return_df = compute_stat(prefix_name, np.array(frame_om_preprocess_df['Steps'].dropna()), return_df, 'Steps', stats_col)
     
     # 3. Heart Rate
     array_heart_rate = frame_om_preprocess_df['HeartRate_mean'].dropna()
     # Select valid heart rate
     cond1 = array_heart_rate > 40
     cond2 = array_heart_rate < 150
-    return_df = compute_stat(prefix_name, np.array(array_heart_rate[cond1 & cond2].dropna()),
-                             return_df, 'HeartRate', stats_col)
+    return_df = compute_stat(prefix_name, np.array(array_heart_rate[cond1 & cond2].dropna()), return_df, 'HeartRate', stats_col)
     
     # 4. HRV feature, choose rr peak coverage region above 0.8
     om_hrv_df = frame_om_df[frame_om_df['RRPeakCoverage'] > 0.8]
@@ -278,9 +269,7 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
                 
                     # At least 50 % of data, then process
                     if len(frame_om_raw_data_df) > threshold:
-                        feature_and_survey = extract_feat_and_return(frame_om_raw_data_df, frame_om_preprocess_df,
-                                                                    dailyMGT.to_frame().transpose(),
-                                                                    participant_id, shift_type)
+                        feature_and_survey = extract_feat_and_return(frame_om_raw_data_df, frame_om_preprocess_df, dailyMGT.to_frame().transpose(), participant_id, shift_type)
                         
                         # ADD YOUR CODE HERE IF YOU WANT TO EXTRACT MORE FEATURES
                         # JUST APPEND TO feature_and_survey, BEFORE feature_and_survey HAS BEEN APPEND TO final_df
