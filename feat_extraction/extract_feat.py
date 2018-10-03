@@ -326,10 +326,11 @@ def append_cluster_MGT(UserInfo, MGT_df, n_cluster=2):
     # 1. Take only affect labels at work
     col = ['stress_mgt', 'anxiety_mgt', 'neg_af_mgt', 'pos_af_mgt']
     
+    # location_mgt == 2 is at work, and itp is only answered when working that day
     final_MGT_df = final_MGT_df.loc[(final_MGT_df['location_mgt'] == 2) | (final_MGT_df['itp_mgt'] > -1)]
     final_MGT_df = final_MGT_df.dropna(subset=col)
     
-    # 2. Normalization
+    # 2. Normalization, normalizer here get best results
     scaler_name = 'norm'
     affect_label_scaler = select_scaler(scaler_name)
     norm_affect_label_array = affect_label_scaler.fit_transform(np.array(final_MGT_df[col]))
