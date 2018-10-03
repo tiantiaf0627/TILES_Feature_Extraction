@@ -1,5 +1,6 @@
 import os, errno
 import pandas as pd
+import pdb
 from datetime import datetime, timedelta
 
 # date_time format
@@ -18,7 +19,7 @@ def getParticipantIDJobShift(main_data_directory):
     
     for index, id_data in id_data_df.iterrows():
         # get job shift and participant id
-        job_shift = job_shift_df.loc[job_shift_df['uid'] == id_data['user_id']]['job_shift'].values[0]
+        job_shift = job_shift_df.loc[job_shift_df['ID'] == id_data['user_id']]['job_shift'].values[0]
         participant_id = id_data['user_id']
         
         frame_df = pd.DataFrame(job_shift, index=['job_shift'], columns=[participant_id]).transpose()
@@ -58,15 +59,44 @@ def getParticipantEndTime():
 
 # Load mgt data
 def read_MGT(main_data_directory):
-    MGT = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth', 'MGT.csv'), index_col=2)
-    MGT.index = pd.to_datetime(MGT.index)
+    affect_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'pan.d.csv'))
+    affect_df.index = pd.to_datetime(affect_df.index)
+    affect_df = affect_df[['ID', 'start', 'pos.affect.d', 'neg.affect.d']]
+
+    anxiety_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'anxiety.d.csv'))
+    anxiety_df.index = pd.to_datetime(anxiety_df.index)
+    anxiety_df = anxiety_df[['ID', 'start', 'anxiety.d']]
+
+    stress_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'stress.d.csv'))
+    stress_df.index = pd.to_datetime(stress_df.index)
+    stress_df = stress_df[['ID', 'start', 'stress.d']]
+
+    itp_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'itp.d.csv'))
+    itp_df.index = pd.to_datetime(itp_df.index)
+    itp_df = itp_df[['ID', 'start', 'work_status']]
+
+    context_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'merged.daily.no_free_response.csv'))
+    context_df.index = pd.to_datetime(context_df.index)
+    context_df = context_df[['Name', 'StartDate', 'context3']]
+
+    #work_df = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/MGT', 'worktoday.csv'), index_col=3)
+    #work_df.index = pd.to_datetime(work_df.index)
+    #work_df = work_df[['ID', 'end', 'work_status']]
+
+    MGT = pd.merge(affect_df, anxiety_df, left_on=['ID', 'start'], right_on=['ID', 'start'], how='outer')
+    MGT = pd.merge(MGT, stress_df, left_on=['ID', 'start'], right_on=['ID', 'start'], how='outer')
+    MGT = pd.merge(MGT, itp_df, left_on=['ID', 'start'], right_on=['ID', 'start'], how='outer')
+    MGT = pd.merge(MGT, context_df, left_on=['ID', 'start'], right_on=['Name', 'StartDate'], how='outer')
+    MGT = MGT.set_index('start')
+
+    MGT = MGT.drop(['Name', 'StartDate'], axis=1)
     
     return MGT
 
 
 # Load pre study data
 def read_pre_study_info(main_data_directory):
-    PreStudyInfo = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth', 'Pre-Study.csv'), index_col=1)
+    PreStudyInfo = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/participant_info', 'prestudy_data.csv'), index_col=3)
     PreStudyInfo.index = pd.to_datetime(PreStudyInfo.index)
     
     return PreStudyInfo
@@ -74,7 +104,7 @@ def read_pre_study_info(main_data_directory):
 
 # Load IGTB data
 def read_IGTB(main_data_directory):
-    IGTB = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth', 'IGTB.csv'), index_col=1)
+    IGTB = pd.read_csv(os.path.join(main_data_directory, 'keck_wave3/ground_truth/IGTB', 'igtb_composites.csv'), index_col=1)
     IGTB.index = pd.to_datetime(IGTB.index)
     
     return IGTB
@@ -109,18 +139,18 @@ def read_user_information(main_data_directory):
     IGTB = read_IGTB(main_data_directory)
 
     # Demographic
-    Demographic = read_Demographic(main_data_directory)
+    # Demographic = read_Demographic(main_data_directory)
 
     # Merge different df together
-    UserInfo = pd.merge(IGTB, PreStudyInfo, left_on='uid', right_on='uid', how='outer')
-    UserInfo = pd.merge(UserInfo, participant_info, left_on='uid', right_on='MitreID', how='outer')
-    UserInfo = pd.merge(UserInfo, Demographic, left_on='uid', right_on='uid', how='outer')
+    UserInfo = pd.merge(IGTB, PreStudyInfo, left_on='ID', right_on='redcap_survey_identifier', how='outer')
+    UserInfo = pd.merge(UserInfo, participant_info, left_on='ID', right_on='MitreID', how='outer')
+    # UserInfo = pd.merge(UserInfo, Demographic, left_on='uid', right_on='uid', how='outer')
     
     # Choose waves
     # Example, read only wave 1 and wave 2
     # UserInfo = UserInfo.loc[UserInfo['Wave'] != 3]
 
-    UserInfo = UserInfo.set_index('uid')
+    UserInfo = UserInfo.set_index('ID')
 
     # 1, Registered Nurse(RN)
     # 2, Certified Nursing Assistant(CNA)

@@ -142,7 +142,7 @@ def extract_feat_and_return(frame_om_df, frame_om_preprocess_df,
     return_df['survey_time'] = survey_time
     
     # Copy mgt data of interest
-    copy_col = ['cluster', 'stress_mgt', 'anxiety_mgt', 'pos_af_mgt', 'neg_af_mgt']
+    copy_col = ['cluster', 'stress.d', 'anxiety.d', 'pos.affect.d', 'neg.affect.d']
 
     for col in copy_col:
         return_df[col] = mgt_df[col].values[0]
@@ -230,7 +230,7 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
         participant_id, shift_type = data['ParticipantID'], data['Shift']
 
         # Read MGT data
-        cond1 = MGT_df['uid'] == uid
+        cond1 = MGT_df['ID'] == uid
         participantMGT = MGT_df.loc[cond1]
         
         # Read the OM signal data
@@ -320,14 +320,14 @@ def append_cluster_MGT(UserInfo, MGT_df, n_cluster=2):
     # First append MGT
     final_MGT_df = pd.DataFrame()
     for index, data in UserInfo.iterrows():
-        user_MGT_col = MGT_df.loc[MGT_df['uid'] == index]
+        user_MGT_col = MGT_df.loc[MGT_df['ID'] == index]
         final_MGT_df = final_MGT_df.append(user_MGT_col)
     
     # 1. Take only affect labels at work
-    col = ['stress_mgt', 'anxiety_mgt', 'neg_af_mgt', 'pos_af_mgt']
+    col = ['stress.d', 'anxiety.d', 'pos.affect.d', 'neg.affect.d']
     
     # location_mgt == 2 is at work, and itp is only answered when working that day
-    final_MGT_df = final_MGT_df.loc[(final_MGT_df['location_mgt'] == 2) | (final_MGT_df['itp_mgt'] > -1)]
+    final_MGT_df = final_MGT_df.loc[(final_MGT_df['context3'] == 2) | (final_MGT_df['work_status'] == 'yes')]
     final_MGT_df = final_MGT_df.dropna(subset=col)
     
     # 2. Normalization, normalizer here get best results
