@@ -339,8 +339,8 @@ def append_cluster_MGT(UserInfo, MGT_df, n_cluster=2):
     pca_result = pca.fit(norm_affect_label_array).transform(norm_affect_label_array)
     
     # 4. Normalization 2-d PCA vectors
-    scaler_name = 'z_norm'
-    # scaler_name = 'norm'
+    # scaler_name = 'z_norm'
+    scaler_name = 'norm'
     pca_scaler = select_scaler(scaler_name)
     norm_pca_components = pca_scaler.fit_transform(pca_result)
     
