@@ -234,8 +234,7 @@ def extract_feat_with_survey(UserInfo, MGT_df, hour_window=4, window=60, step=30
         participantMGT = MGT_df.loc[cond1]
         
         # Read the OM signal data
-        om_file_path = os.path.join(main_data_directory, 'keck_wave3/3_preprocessed_data', 'omsignal',
-                                    participant_id + '_omsignal.csv')
+        om_file_path = os.path.join(main_data_directory, 'keck_wave_all/2_raw_csv_data', 'omsignal', participant_id + '_omsignal.csv')
         om_preprocess_file_path = os.path.join(window_path, participant_id + '.csv')
         
         # If om file exist
@@ -341,6 +340,7 @@ def append_cluster_MGT(UserInfo, MGT_df, n_cluster=2):
     
     # 4. Normalization 2-d PCA vectors
     scaler_name = 'z_norm'
+    # scaler_name = 'norm'
     pca_scaler = select_scaler(scaler_name)
     norm_pca_components = pca_scaler.fit_transform(pca_result)
     
